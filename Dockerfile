@@ -65,7 +65,9 @@ RUN pyenv install $PYTHON_VERSION && \
 
 COPY --chown=user:user ./seamless_server ./seamless_server
 # change dir since pip needs to seed whl folder
-RUN cd seamless_server && pip install --no-cache-dir --upgrade -r requirements.txt
+RUN cd seamless_server
+    pip install fairseq2 --pre --extra-index-url https://fair.pkg.atmeta.com/fairseq2/whl/nightly/pt2.1.1/cu118
+    pip install --no-cache-dir --upgrade -r requirements.txt
 COPY --from=frontend /app/dist ./streaming-react-app/dist
 
 WORKDIR $HOME/app/seamless_server
