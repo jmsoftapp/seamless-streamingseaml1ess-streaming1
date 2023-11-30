@@ -37,8 +37,9 @@ pip install -r requirements.txt
 ```
 conda install -c conda-forge nodejs
 cd streaming-react-app
-npm install
-npm run build  # this will create the dist/ folder
+npm install --global yarn
+yarn
+yarn build  # this will create the dist/ folder
 ```
 
 
