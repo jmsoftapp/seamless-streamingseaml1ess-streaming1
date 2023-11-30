@@ -757,7 +757,8 @@ export default function StreamingInterface() {
               <div>
                 <Typography variant="body2" sx={{color: '#65676B'}}>
                   Welcome! Join a room as speaker or listener (or both), and share the 
-                  room code to invite listeners.
+                  room code to invite listeners. If you see the server is locked,
+                  please duplicate the space: https://huggingface.co/spaces/facebook/seamless-streaming?duplicate=true
                   <br/>
                   SeamlessStreaming model is a research model and is not released
                   for production deployment. The streaming quality is closely 
