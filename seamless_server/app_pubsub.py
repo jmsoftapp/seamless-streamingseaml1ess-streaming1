@@ -497,18 +497,19 @@ async def join_room(sid, client_id, room_id_from_client, config_dict):
     ):
         # If something goes wrong and the server gets stuck in a locked state the client can
         # force the server to remove the lock by passing the special name ESCAPE_HATCH_SERVER_LOCK_RELEASE_NAME
-        if (
-            server_lock is not None
-            and config_dict.get("lockServerName")
-            == ESCAPE_HATCH_SERVER_LOCK_RELEASE_NAME
-        ):
-            server_lock = None
-            logger.info(
-                f"🔓 Server lock has been reset by {client_id} using the escape hatch name {ESCAPE_HATCH_SERVER_LOCK_RELEASE_NAME}"
-            )
+        # TEMP: remove escape hatch for demo
+        # if (
+        #     server_lock is not None
+        #     and config_dict.get("lockServerName")
+        #     == ESCAPE_HATCH_SERVER_LOCK_RELEASE_NAME
+        # ):
+        #     server_lock = None
+        #     logger.info(
+        #         f"🔓 Server lock has been reset by {client_id} using the escape hatch name {ESCAPE_HATCH_SERVER_LOCK_RELEASE_NAME}"
+        #     )
 
         # If the server is not locked, set a lock. If it's already locked to this client, update the lock object
-        elif server_lock is None or server_lock.get("client_id") == client_id:
+        if server_lock is None or server_lock.get("client_id") == client_id:
             # TODO: Add some sort of timeout as a backstop in case someone leaves the browser tab open after locking the server
             server_lock = {
                 "name": config_dict.get("lockServerName"),
