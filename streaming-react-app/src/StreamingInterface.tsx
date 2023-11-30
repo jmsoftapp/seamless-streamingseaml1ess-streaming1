@@ -758,7 +758,12 @@ export default function StreamingInterface() {
                 <Typography variant="body2" sx={{color: '#65676B'}}>
                   Welcome! Join a room as speaker or listener (or both), and share the 
                   room code to invite listeners. If you see the server is locked,
-                  please duplicate the space: https://huggingface.co/spaces/facebook/seamless-streaming?duplicate=true
+                  please duplicate the space 
+                  <a href="https://huggingface.co/spaces/facebook/seamless-streaming?duplicate=true">here</a>.
+                  <br/>
+                  Check out the seamless_communication 
+                  <a href="https://github.com/facebookresearch/seamless_communication/tree/main/src/seamless_communication">README</a> 
+                  for more information
                   <br/>
                   SeamlessStreaming model is a research model and is not released
                   for production deployment. The streaming quality is closely 
