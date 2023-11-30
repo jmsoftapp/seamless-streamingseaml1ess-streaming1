@@ -15,16 +15,19 @@ You can simply duplicate the space to run it.
 ## Running locally
 ### Install backend seamless_server dependencies
 
-Please note: we *strongly* recommend running the model on GPU. 
+> [!NOTE]
+> Please note: we *do not* recommend running the model on CPU. CPU inference will be slow and introduce noticable delays in the simultaneous translation.
 
-If running for the first time, create conda environment and install the desired torch version. The example below is for PyTorch 2.1.1 and variant cu118. Check [here](https://pytorch.org/get-started/locally/) to find the command for your variant. Then install the rest of the requirements:
+> [!NOTE]
+> The example below is for PyTorch stable (2.1.1) and variant cu118. Check [here](https://pytorch.org/get-started/locally/) to find the command for your variant. 
+
+If running for the first time, create conda environment and install the desired torch version. Then install the rest of the requirements:
 ```
 cd seamless_server
-conda create --name smlss_server python=3.8
+conda create --yes --name smlss_server python=3.8 libsndfile==1.0.31
 conda activate smlss_server
-conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
+conda install --yes pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 pip install -r requirements.txt
-conda install -c conda-forge libsndfile==1.0.31
 ```
 
 ### Install frontend streaming-react-app dependencies
