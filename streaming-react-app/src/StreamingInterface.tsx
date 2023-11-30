@@ -1088,7 +1088,7 @@ export default function StreamingInterface() {
                     serverState.serverLock.clientID !== clientID && (
                       <div>
                         <Alert severity="warning">
-                          {`The server is currently locked by "${serverState.serverLock.name}". Priority will be given to that client when they are streaming, and your streaming session may be halted abruptly.`}
+                          {`The server is currently locked. Priority will be given to that client when they are streaming, and your streaming session may be halted abruptly.`}
                         </Alert>
                       </div>
                     )}
