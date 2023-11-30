@@ -1,5 +1,5 @@
 ---
-title: Seamless Streaming Backend/Frontend
+title: Seamless Streaming
 emoji: 📞
 colorFrom: blue
 colorTo: yellow
