@@ -5,7 +5,7 @@ colorFrom: blue
 colorTo: yellow
 sdk: docker
 pinned: false
-suggested_hardware: t4-medium
+suggested_hardware: t4-small
 ---
 
 # Seamless Streaming demo
