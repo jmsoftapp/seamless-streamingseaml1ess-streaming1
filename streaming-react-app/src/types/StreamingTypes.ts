@@ -55,9 +55,9 @@ export const SUPPORTED_INPUT_SOURCES: Array<{
   value: SupportedInputSource;
   label: string;
 }> = [
-    { value: 'userMedia', label: 'Microphone' },
-    { value: 'displayMedia', label: 'Browser Tab' },
-  ];
+  {value: 'userMedia', label: 'Microphone'},
+  {value: 'displayMedia', label: 'Browser Tab (Chrome only)'},
+];
 
 export type StartStreamEventConfig = {
   event: 'config';
@@ -70,6 +70,7 @@ export type StartStreamEventConfig = {
 };
 
 export interface BrowserAudioStreamConfig {
+  echoCancellation: boolean;
   noiseSuppression: boolean;
   echoCancellation: boolean;
 }

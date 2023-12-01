@@ -25,28 +25,14 @@ import {BLACK, WHITE} from './Colors';
 import robotoFontFamilyJson from '../assets/RobotoMono-Regular-msdf.json?url';
 import robotoFontTexture from '../assets/RobotoMono-Regular.png';
 import {getURLParams} from '../URLParams';
-import TextBlocks, {CHARS_PER_LINE} from './TextBlocks';
+import TextBlocks from './TextBlocks';
 import {BufferedSpeechPlayer} from '../createBufferedSpeechPlayer';
 import {CURSOR_BLINK_INTERVAL_MS} from '../cursorBlinkInterval';
+import supportedCharSet from './supportedCharSet';
 
 // Adds on react JSX for add-on libraries to react-three-fiber
 extend(ThreeMeshUI);
 extend({TextGeometry});
-
-async function fetchSupportedCharSet(): Promise<Set<string>> {
-  try {
-    const response = await fetch(robotoFontFamilyJson);
-    const fontFamily = await response.json();
-
-    return new Set(fontFamily.info.charset);
-  } catch (e) {
-    console.error('Failed to fetch supported XR charset', e);
-    return new Set();
-  }
-}
-
-let supportedCharSet = new Set();
-fetchSupportedCharSet().then((result) => (supportedCharSet = result));
 
 // This component wraps any children so it is positioned relative to the camera, rather than from the origin
 function CameraLinkedObject({children}) {
@@ -76,10 +62,7 @@ function ThreeMeshUIComponents({
             translationSentences={translationSentences}
           />
         ) : (
-          <TranscriptPanelBlocks
-            animateTextDisplay={animateTextDisplay}
-            translationSentences={translationSentences}
-          />
+          <TranscriptPanelBlocks translationSentences={translationSentences} />
         )}
         {skipARIntro ? null : (
           <IntroPanel started={started} setStarted={setStarted} />
@@ -153,7 +136,7 @@ function TranscriptPanelSingleBlock({
           (wordChunks, currentWord) => {
             const filteredWord = [...currentWord]
               .filter((c) => {
-                if (supportedCharSet.has(c)) {
+                if (supportedCharSet().has(c)) {
                   return true;
                 }
                 console.error(
@@ -223,59 +206,14 @@ function TranscriptPanelSingleBlock({
 // Splits up the lines into separate blocks to treat each one separately.
 // This allows changing of opacity, animating per line, changing height / width per line etc
 function TranscriptPanelBlocks({
-  animateTextDisplay,
   translationSentences,
 }: {
-  animateTextDisplay: boolean;
   translationSentences: TranslationSentences;
 }) {
-  const [didReceiveTranslationSentences, setDidReceiveTranslationSentences] =
-    // Currently causing issues with displaying dummy text, skip over
-    useState(false);
-
-  // Normally we don't setState in render, but here we need to for computed state, and this if statement assures it won't loop infinitely
-  if (!didReceiveTranslationSentences && translationSentences.length > 0) {
-    setDidReceiveTranslationSentences(true);
-  }
-
-  const initialPrompt = 'Listening...';
-  const transcriptSentences: string[] = didReceiveTranslationSentences
-    ? translationSentences
-    : [initialPrompt];
-
-  // The transcript is an array of sentences. For each sentence we break this down into an array of words per line.
-  // This is needed so we can "scroll" through without changing the order of words in the transcript
-  const sentenceLines = transcriptSentences.map((sentence) => {
-    const words = sentence.split(/\s+/);
-    // Here we break each sentence up with newlines so all words per line fit within the panel
-    return words.reduce(
-      (wordChunks, currentWord) => {
-        const filteredWord = [...currentWord]
-          .filter((c) => {
-            if (supportedCharSet.has(c)) {
-              return true;
-            }
-            console.error(
-              `Unsupported char ${c} - make sure this is supported in the font family msdf file`,
-            );
-            return false;
-          })
-          .join('');
-        const lastLineSoFar = wordChunks[wordChunks.length - 1];
-        const charCount = lastLineSoFar.length + filteredWord.length + 1;
-        if (charCount <= CHARS_PER_LINE) {
-          wordChunks[wordChunks.length - 1] =
-            lastLineSoFar + ' ' + filteredWord;
-        } else {
-          wordChunks.push(filteredWord);
-        }
-        return wordChunks;
-      },
-      [''],
-    );
-  });
   return (
-    <TextBlocks sentences={sentenceLines} blinkCursor={animateTextDisplay} />
+    <TextBlocks
+      translationText={'Listening...\n' + translationSentences.join('\n')}
+    />
   );
 }
 
@@ -361,6 +299,8 @@ export type XRConfigProps = {
   startStreaming: () => Promise<void>;
   stopStreaming: () => Promise<void>;
   debugParam: boolean | null;
+  onARVisible?: () => void;
+  onARHidden?: () => void;
 };
 
 export default function XRConfig(props: XRConfigProps) {

@@ -124,7 +124,22 @@ class ServerLock(TypedDict):
     member_object: Member
 
 
-server_lock: Optional[ServerLock] = None
+if os.environ.get("LOCK_SERVER_COMPLETELY"):
+    logger.info("LOCK_SERVER_COMPLETELY is set. Server will be locked on startup.")
+dummy_server_lock_member_object = Member(
+    client_id="seamless_user", session_id="dummy", name="Seamless User"
+)
+# Normally this would be an actual transcoder, but it's fine putting True here since currently we only check for the presence of the transcoder
+dummy_server_lock_member_object.transcoder = True
+server_lock: Optional[ServerLock] = (
+    {
+        "name": "Seamless User",
+        "client_id": "seamless_user",
+        "member_object": dummy_server_lock_member_object,
+    }
+    if os.environ.get("LOCK_SERVER_COMPLETELY")
+    else None
+)
 
 server_id = str(uuid4())
 
@@ -497,16 +512,17 @@ async def join_room(sid, client_id, room_id_from_client, config_dict):
     ):
         # If something goes wrong and the server gets stuck in a locked state the client can
         # force the server to remove the lock by passing the special name ESCAPE_HATCH_SERVER_LOCK_RELEASE_NAME
-        # TEMP: remove escape hatch for demo
-        # if (
-        #     server_lock is not None
-        #     and config_dict.get("lockServerName")
-        #     == ESCAPE_HATCH_SERVER_LOCK_RELEASE_NAME
-        # ):
-        #     server_lock = None
-        #     logger.info(
-        #         f"🔓 Server lock has been reset by {client_id} using the escape hatch name {ESCAPE_HATCH_SERVER_LOCK_RELEASE_NAME}"
-        #     )
+        if (
+            server_lock is not None
+            and config_dict.get("lockServerName")
+            == ESCAPE_HATCH_SERVER_LOCK_RELEASE_NAME
+            # If we are locking the server completely we don't want someone to be able to unlock it
+            and not os.environ.get("LOCK_SERVER_COMPLETELY")
+        ):
+            server_lock = None
+            logger.info(
+                f"🔓 Server lock has been reset by {client_id} using the escape hatch name {ESCAPE_HATCH_SERVER_LOCK_RELEASE_NAME}"
+            )
 
         # If the server is not locked, set a lock. If it's already locked to this client, update the lock object
         if server_lock is None or server_lock.get("client_id") == client_id:

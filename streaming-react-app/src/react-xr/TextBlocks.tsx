@@ -1,9 +1,8 @@
-import {JSX, useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import robotoFontFamilyJson from '../assets/RobotoMono-Regular-msdf.json?url';
 import robotoFontTexture from '../assets/RobotoMono-Regular.png';
 import ThreeMeshUIText, {ThreeMeshUITextType} from './ThreeMeshUIText';
-import {getURLParams} from '../URLParams';
-import {CURSOR_BLINK_INTERVAL_MS} from '../cursorBlinkInterval';
+import supportedCharSet from './supportedCharSet';
 
 const NUM_LINES = 3;
 
@@ -22,44 +21,80 @@ const SCROLL_Y_DELTA = 0.001;
 const OFFSET = 0.01;
 const OFFSET_WIDTH = OFFSET * 3;
 
-type Props = {
+const CHARS_PER_SECOND = 10;
+
+// The tick interval
+const RENDER_INTERVAL = 300;
+
+const CURSOR_BLINK_INTERVAL_MS = 1000;
+
+type TextBlockProps = {
   content: string;
   // The actual position or end position when animating
   y: number;
   // The start position when animating
   startY: number;
-  width: number;
-  height: number;
   textOpacity: number;
   backgroundOpacity: number;
-  // Use this to keep track of sentence + line position for animation
-  index: string;
-  enableAnimation: boolean;
+  index: number;
+  isBottomLine: boolean;
+  // key: number;
+};
+
+type TranscriptState = {
+  textBlocksProps: TextBlockProps[];
+  lastTranslationStringIndex: number;
+  lastTranslationLineStartIndex: number;
+  transcriptLines: string[];
+  lastRenderTime: number;
 };
 
 function TextBlock({
   content,
   y,
   startY,
-  width,
-  height,
   textOpacity,
   backgroundOpacity,
   index,
-  enableAnimation,
-}: Props) {
+  isBottomLine,
+}: TextBlockProps) {
   const [scrollY, setScrollY] = useState<number>(y);
-
   // We are reusing text blocks so this keeps track of when we changed rows so we can restart animation
-  const lastIndex = useRef<string>(index);
+  const lastIndex = useRef<number>(index);
   useEffect(() => {
     if (index != lastIndex.current) {
       lastIndex.current = index;
-      enableAnimation && setScrollY(startY);
+      !isBottomLine && setScrollY(startY);
     } else if (scrollY < y) {
       setScrollY((prev) => prev + SCROLL_Y_DELTA);
     }
-  }, [enableAnimation, index, scrollY, setScrollY, startY, y]);
+  }, [isBottomLine, index, scrollY, setScrollY, startY, y]);
+
+  const [cursorBlinkOn, setCursorBlinkOn] = useState(false);
+  useEffect(() => {
+    if (isBottomLine) {
+      const interval = setInterval(() => {
+        setCursorBlinkOn((prev) => !prev);
+      }, CURSOR_BLINK_INTERVAL_MS);
+
+      return () => clearInterval(interval);
+    } else {
+      setCursorBlinkOn(false);
+    }
+  }, [isBottomLine]);
+
+  const numChars = content.length;
+
+  if (cursorBlinkOn) {
+    content = content + '|';
+  }
+
+  // Accounting for potential cursor for block width (the +1)
+  const width =
+    (numChars + (isBottomLine ? 1.1 : 0) + (numChars < 10 ? 1 : 0)) *
+    CHAR_WIDTH;
+
+  const height = LINE_HEIGHT;
 
   // This is needed to update text content (doesn't work if we just update the content prop)
   const textRef = useRef<ThreeMeshUITextType>();
@@ -111,125 +146,162 @@ function TextBlock({
   );
 }
 
-// Background behind the text so it covers any missing spaces
-function TranscriptionPanel() {
-  const panelHeight = LINE_HEIGHT * NUM_LINES + 2 * BLOCK_SPACING + 2 * OFFSET;
-  const xPosition = OFFSET_WIDTH;
-  return (
-    <block
-      args={[
-        {
-          backgroundOpacity: 1,
-          width:
-            MAX_WIDTH * ((CHARS_PER_LINE + 2) / CHARS_PER_LINE) +
-            2 * OFFSET_WIDTH,
-          height: panelHeight,
-          borderRadius: 0,
-        },
-      ]}
-      position={[
-        -OFFSET + xPosition,
-        Y_COORD_START + panelHeight / 2 - 2 * OFFSET,
-        Z_COORD,
-      ]}></block>
-  );
+function initialTextBlockProps(count: number): TextBlockProps[] {
+  return Array.from({length: count}).map(() => {
+    // Push in non display blocks because mesh UI crashes if elements are add / removed from screen.
+    return {
+      y: Y_COORD_START,
+      startY: 0,
+      index: 0,
+      textOpacity: 0,
+      backgroundOpacity: 0,
+      width: MAX_WIDTH,
+      height: LINE_HEIGHT,
+      content: '',
+      isBottomLine: true,
+    };
+  });
 }
 
 export default function TextBlocks({
-  sentences,
-  blinkCursor,
+  translationText,
 }: {
-  sentences: string[][];
-  blinkCursor: boolean;
+  translationText: string;
 }) {
-  const showTranscriptionPanel =
-    getURLParams().ARTranscriptionType === 'lines_with_background';
-  const textBlocks: JSX.Element[] = [];
+  const transcriptStateRef = useRef<TranscriptState>({
+    textBlocksProps: initialTextBlockProps(NUM_LINES),
+    lastTranslationStringIndex: 0,
+    lastTranslationLineStartIndex: 0,
+    transcriptLines: [],
+    lastRenderTime: new Date().getTime(),
+  });
 
-  const [cursorBlinkOn, setCursorBlinkOn] = useState(false);
+  const transcriptState = transcriptStateRef.current;
+  const {textBlocksProps, lastTranslationStringIndex, lastRenderTime} =
+    transcriptState;
+
+  const [charsToRender, setCharsToRender] = useState<number>(0);
+
   useEffect(() => {
-    if (blinkCursor) {
-      const interval = setInterval(() => {
-        setCursorBlinkOn((prev) => !prev);
-      }, CURSOR_BLINK_INTERVAL_MS);
-
-      return () => clearInterval(interval);
-    } else {
-      setCursorBlinkOn(false);
-    }
-  }, [blinkCursor]);
-
-  // Start from bottom and populate most recent sentences by line until we fill max lines.
-  let currentY = Y_COORD_START;
-  for (let i = sentences.length - 1; i >= 0; i--) {
-    const sentenceLines = sentences[i];
-    for (let j = sentenceLines.length - 1; j >= 0; j--) {
-      if (textBlocks.length == NUM_LINES) {
-        if (showTranscriptionPanel) {
-          textBlocks.push(<TranscriptionPanel key={textBlocks.length} />);
-        }
-        return textBlocks;
-      }
-
-      const isBottomSentence = i === sentences.length - 1;
-      const isBottomLine = isBottomSentence && textBlocks.length === 0;
-      const y = currentY + LINE_HEIGHT / 2;
-      let textBlockLine = sentenceLines[j];
-      const numChars = textBlockLine.length;
-
-      if (cursorBlinkOn && isBottomLine) {
-        textBlockLine = textBlockLine + '|';
-      }
-
-      // Accounting for potential cursor for block width (the +1)
-      const blockWidth =
-        (numChars + (isBottomLine ? 1.1 : 0) + (numChars < 10 ? 1 : 0)) *
-        CHAR_WIDTH;
-      const textOpacity = 1 - 0.1 * textBlocks.length;
-      textBlocks.push(
-        <TextBlock
-          key={textBlocks.length}
-          y={y}
-          startY={currentY}
-          index={`${sentences.length - i},${j}`}
-          textOpacity={textOpacity}
-          backgroundOpacity={0.98}
-          height={LINE_HEIGHT}
-          width={blockWidth}
-          // content={"BLOCK " + textBlocks.length + ": " + content}
-          content={textBlockLine}
-          enableAnimation={!isBottomLine}
-        />,
+    const interval = setInterval(() => {
+      const currentTime = new Date().getTime();
+      const charsToRender = Math.round(
+        ((currentTime - lastRenderTime) * CHARS_PER_SECOND) / 1000,
       );
+      setCharsToRender(charsToRender);
+    }, RENDER_INTERVAL);
 
-      currentY = y + LINE_HEIGHT / 2;
-    }
-    currentY += showTranscriptionPanel ? BLOCK_SPACING / 3 : BLOCK_SPACING;
+    return () => clearInterval(interval);
+  }, [lastRenderTime]);
+
+  const currentTime = new Date().getTime();
+  if (charsToRender < 1) {
+    return textBlocksProps.map((props, idx) => (
+      <TextBlock {...props} key={idx} />
+    ));
   }
 
-  const numRemainingBlocks = textBlocks.length - NUM_LINES;
-  if (numRemainingBlocks > 0) {
-    Array.from({length: numRemainingBlocks}).forEach(() => {
-      // Push in non display blocks because mesh UI crashes if elements are add / removed from screen.
-      textBlocks.push(
-        <TextBlock
-          key={textBlocks.length}
-          y={Y_COORD_START}
-          startY={0}
-          index="0,0"
-          textOpacity={0}
-          backgroundOpacity={0}
-          enableAnimation={false}
-          width={MAX_WIDTH}
-          height={LINE_HEIGHT}
-          content=""
-        />,
-      );
+  const nextTranslationStringIndex = Math.min(
+    lastTranslationStringIndex + charsToRender,
+    translationText.length,
+  );
+  const newString = translationText.substring(
+    lastTranslationStringIndex,
+    nextTranslationStringIndex,
+  );
+  if (nextTranslationStringIndex === lastTranslationStringIndex) {
+    transcriptState.lastRenderTime = currentTime;
+    return textBlocksProps.map((props, idx) => (
+      <TextBlock {...props} key={idx} />
+    ));
+  }
+
+  // Wait until more characters are accumulated if its just blankspace
+  if (/^\s*$/.test(newString)) {
+    transcriptState.lastRenderTime = currentTime;
+    return textBlocksProps.map((props, idx) => (
+      <TextBlock {...props} key={idx} />
+    ));
+  }
+
+  // Ideally we continue where we left off but this is complicated when we have mid-words. Recalculating for now
+  const runAll = true;
+  const newSentences = runAll
+    ? translationText.substring(0, nextTranslationStringIndex).split('\n')
+    : newString.split('\n');
+  const transcriptLines = runAll ? [''] : transcriptState.transcriptLines;
+  newSentences.forEach((newSentence, sentenceIdx) => {
+    const words = newSentence.split(/\s+/);
+    words.forEach((word) => {
+      const filteredWord = [...word]
+        .filter((c) => {
+          if (supportedCharSet().has(c)) {
+            return true;
+          }
+          console.error(
+            `Unsupported char ${c} - make sure this is supported in the font family msdf file`,
+          );
+          return false;
+        })
+        .join('');
+
+      const lastLineSoFar = transcriptLines[0];
+      const charCount = lastLineSoFar.length + filteredWord.length + 1;
+
+      if (charCount <= CHARS_PER_LINE) {
+        transcriptLines[0] = lastLineSoFar + ' ' + filteredWord;
+      } else {
+        transcriptLines.unshift(filteredWord);
+      }
     });
+
+    if (sentenceIdx < newSentences.length - 1) {
+      transcriptLines.unshift('\n');
+      transcriptLines.unshift('');
+    }
+  });
+
+  transcriptState.transcriptLines = transcriptLines;
+  transcriptState.lastTranslationStringIndex = nextTranslationStringIndex;
+
+  const newTextBlocksProps: TextBlockProps[] = [];
+  let currentY = Y_COORD_START;
+
+  transcriptLines.forEach((line, i) => {
+    if (newTextBlocksProps.length == NUM_LINES) {
+      return;
+    }
+
+    // const line = transcriptLines[i];
+    if (line === '\n') {
+      currentY += BLOCK_SPACING;
+      return;
+    }
+    const y = currentY + LINE_HEIGHT / 2;
+    const isBottomLine = newTextBlocksProps.length === 0;
+
+    const textOpacity = 1 - 0.1 * newTextBlocksProps.length;
+    newTextBlocksProps.push({
+      y,
+      startY: currentY,
+      index: i,
+      textOpacity,
+      backgroundOpacity: 0.98,
+      content: line,
+      isBottomLine,
+    });
+
+    currentY = y + LINE_HEIGHT / 2;
+  });
+
+  const numRemainingBlocks = NUM_LINES - newTextBlocksProps.length;
+  if (numRemainingBlocks > 0) {
+    newTextBlocksProps.push(...initialTextBlockProps(numRemainingBlocks));
   }
 
-  if (showTranscriptionPanel) {
-    textBlocks.push(<TranscriptionPanel key={textBlocks.length} />);
-  }
-  return textBlocks;
+  transcriptState.textBlocksProps = newTextBlocksProps;
+  transcriptState.lastRenderTime = currentTime;
+  return newTextBlocksProps.map((props, idx) => (
+    <TextBlock {...props} key={idx} />
+  ));
 }

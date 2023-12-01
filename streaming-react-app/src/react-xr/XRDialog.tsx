@@ -8,27 +8,12 @@ import {
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import {XRConfigProps} from './XRConfig';
 import {useEffect, useRef, useState} from 'react';
 import './XRDialog.css';
 import {getRenderer, init, updatetranslationText} from './XRRendering';
 import ARButton from './ARButton';
 import {getURLParams} from '../URLParams';
-import { BufferedSpeechPlayer } from '../createBufferedSpeechPlayer';
-import { TranslationSentences } from '../types/StreamingTypes';
-import { RoomState } from '../types/RoomState';
-
-type XRConfigProps = {
-  animateTextDisplay: boolean;
-  bufferedSpeechPlayer: BufferedSpeechPlayer;
-  translationSentences: TranslationSentences;
-  roomState: RoomState | null;
-  roomID: string | null;
-  startStreaming: () => Promise<void>;
-  stopStreaming: () => Promise<void>;
-  debugParam: boolean | null;
-  onARVisible?: () => void;
-  onARHidden?: () => void;
-};
 
 function XRContent(props: XRConfigProps) {
   const debugParam = getURLParams().debug;

@@ -57,12 +57,12 @@ import {CURSOR_BLINK_INTERVAL_MS} from './cursorBlinkInterval';
 import {getURLParams} from './URLParams';
 import debug from './debug';
 import DebugSection from './DebugSection';
-import {Grid} from '@mui/material';
+import Switch from '@mui/material/Switch';
+import Grid from '@mui/material/Grid';
 import {getLanguageFromThreeLetterCode} from './languageLookup';
+import HeadphonesIcon from '@mui/icons-material/Headphones';
 
-const AUDIO_STREAM_DEFAULTS: {
-  [key in SupportedInputSource]: BrowserAudioStreamConfig;
-} = {
+const AUDIO_STREAM_DEFAULTS = {
   userMedia: {
     echoCancellation: false,
     noiseSuppression: true,
@@ -71,13 +71,10 @@ const AUDIO_STREAM_DEFAULTS: {
     echoCancellation: false,
     noiseSuppression: false,
   },
-};
+} as const;
 
 async function requestUserMediaAudioStream(
-  config: BrowserAudioStreamConfig = {
-    echoCancellation: false,
-    noiseSuppression: true,
-  },
+  config: BrowserAudioStreamConfig = AUDIO_STREAM_DEFAULTS['userMedia'],
 ) {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {...config, channelCount: 1},
@@ -90,10 +87,7 @@ async function requestUserMediaAudioStream(
 }
 
 async function requestDisplayMediaAudioStream(
-  config: BrowserAudioStreamConfig = {
-    echoCancellation: false,
-    noiseSuppression: false,
-  },
+  config: BrowserAudioStreamConfig = AUDIO_STREAM_DEFAULTS['displayMedia'],
 ) {
   const stream = await navigator.mediaDevices.getDisplayMedia({
     audio: {...config, channelCount: 1},
@@ -962,8 +956,9 @@ export default function StreamingInterface() {
                         </RadioGroup>
                       </FormControl>
                     </Box>
-                    <Box sx={{flex: 1}}>
-                      <FormControl disabled={streamFixedConfigOptionsDisabled}>
+
+                    <Box sx={{flex: 1, flexGrow: 2}}>
+                    <FormControl disabled={streamFixedConfigOptionsDisabled}>
                         <FormLabel>Options</FormLabel>
                         <FormControlLabel
                           control={
@@ -980,9 +975,9 @@ export default function StreamingInterface() {
                               }
                             />
                           }
-                          label="Noise Suppression (Browser)"
+                          label="Noise Suppression"
                         />
-                                                <FormControlLabel
+                        <FormControlLabel
                           control={
                             <Checkbox
                               checked={
@@ -997,7 +992,7 @@ export default function StreamingInterface() {
                               }
                             />
                           }
-                          label="Echo Cancellation (Browser)"
+                          label="Echo Cancellation (not recommended)"
                         />
                         <FormControlLabel
                           control={
@@ -1008,11 +1003,33 @@ export default function StreamingInterface() {
                               ) => setServerDebugFlag(event.target.checked)}
                             />
                           }
-                          label="Server Debug Flag"
+                          label="Enable Server Debugging"
                         />
                       </FormControl>
                     </Box>
                   </Stack>
+
+                  {isSpeaker &&
+                    isListener &&
+                    inputSource === 'userMedia' &&
+                    !enableEchoCancellation &&
+                    gain !== 0 && (
+                      <div>
+                        <Alert severity="warning" icon={<HeadphonesIcon />}>
+                          Headphones required to prevent feedback.
+                        </Alert>
+                      </div>
+                    )}
+
+                  {isSpeaker && enableEchoCancellation && (
+                    <div>
+                      <Alert severity="warning">
+                        We don't recommend using echo cancellation as it may
+                        distort the input audio. If possible, use headphones and
+                        disable echo cancellation instead.
+                      </Alert>
+                    </div>
+                  )}
 
                   <Stack direction="row" spacing={2}>
                     {streamingStatus === 'stopped' ? (
