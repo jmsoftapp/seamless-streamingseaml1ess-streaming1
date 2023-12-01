@@ -750,17 +750,19 @@ export default function StreamingInterface() {
             <div className="header-container-sra">
               <div>
                 <Typography variant="body2" sx={{color: '#65676B'}}>
-                  Welcome! Join a room as speaker or listener (or both), and share the 
-                  room code to invite listeners. If you see the server is locked,
-                  please duplicate the space <a target="_blank" rel="noopener noreferrer" href="https://huggingface.co/spaces/facebook/seamless-streaming?duplicate=true">here</a>.
+                  Welcome! This space is locked, please duplicate the space <a target="_blank" rel="noopener noreferrer" href="https://huggingface.co/spaces/facebook/seamless-streaming?duplicate=true">here</a>. Unset the environment variable `LOCK_SERVER_COMPLETELY`.
                   <br/>
-                  Check out the seamless_communication <a target="_blank" rel="noopener noreferrer" href="https://github.com/facebookresearch/seamless_communication/tree/main">README</a> for more information
+                  In your duplicated space, join a room as speaker or listener (or both), and share the 
+                  room code to invite listeners.
+                  <br/>
+                  Check out the seamless_communication <a target="_blank" rel="noopener noreferrer" href="https://github.com/facebookresearch/seamless_communication/tree/main">README</a> for more information.
                   <br/>
                   SeamlessStreaming model is a research model and is not released
                   for production deployment. The streaming quality is closely 
                   related to proper VAD segmentation. It works best if you pause 
                   every couple of sentences, or you may wish adjust the VAD threshold
-                  in the model config.
+                  in the model config. The real-time performance will degrade
+                  if you try streaming multiple speakers at the same time.
                 </Typography>
               </div>
             </div>
@@ -919,13 +921,6 @@ export default function StreamingInterface() {
                       </Grid>
                     </Grid>
                   </Stack>
-
-                  <Typography variant="body2" sx={{color: '#65676B'}}>
-                    Note: we don't recommend echo cancellation, as it may distort 
-                    the input audio (dropping words/sentences) if there is output 
-                    audio playing. Instead, you should use headphones if you'd like 
-                    to listen to the output audio while speaking.
-                  </Typography>
 
                   <Stack
                     direction="row"
