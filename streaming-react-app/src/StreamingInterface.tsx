@@ -165,6 +165,9 @@ export default function StreamingInterface() {
 
   // Dynamic Params:
   const [targetLang, setTargetLang] = useState<string | null>(null);
+  const [enableExpressive, setEnableExpressive] = useState<boolean | null>(
+    null,
+  );
 
   const [serverDebugFlag, setServerDebugFlag] = useState<boolean>(
     debugParam ?? false,
@@ -246,6 +249,7 @@ export default function StreamingInterface() {
       setAgent((prevAgent) => {
         if (prevAgent?.name !== newAgent?.name) {
           setTargetLang(newAgent?.targetLangs[0] ?? null);
+          setEnableExpressive(null);
         }
         return newAgent;
       });
@@ -421,6 +425,7 @@ export default function StreamingInterface() {
       // available before actually configuring and starting the stream
       const fullDynamicConfig: DynamicConfig = {
         targetLanguage: targetLang,
+        expressive: enableExpressive,
       };
 
       await onSetDynamicConfig(fullDynamicConfig);
@@ -906,6 +911,28 @@ export default function StreamingInterface() {
                           spacing={1}
                           alignItems="flex-start"
                           sx={{flexGrow: 1}}>
+                          {currentAgent?.dynamicParams?.includes(
+                            'expressive',
+                          ) && (
+                            <FormControlLabel
+                              control={
+                                <Switch
+                                  checked={enableExpressive ?? false}
+                                  onChange={(
+                                    event: React.ChangeEvent<HTMLInputElement>,
+                                  ) => {
+                                    const newValue = event.target.checked;
+                                    setEnableExpressive(newValue);
+                                    onSetDynamicConfig({
+                                      expressive: newValue,
+                                    });
+                                  }}
+                                />
+                              }
+                              label="Expressive"
+                            />
+                          )}
+
                           {isListener && (
                             <Box
                               sx={{

@@ -1,6 +1,7 @@
 # Creates a directory in which to look up available agents
 
-from typing import List
+import os
+from typing import List, Optional
 from src.simuleval_transcoder import SimulevalTranscoder
 import json
 import logging
@@ -33,8 +34,10 @@ class AgentWithInfo:
         # Supported dynamic params are defined in StreamingTypes.ts
         dynamic_params: List[str] = [],
         description="",
+        has_expressive: Optional[bool] = None,
     ):
         self.agent = agent
+        self.has_expressive = has_expressive
         self.name = name
         self.description = description
         self.modalities = modalities
@@ -75,6 +78,7 @@ class AgentWithInfo:
 class SimulevalAgentDirectory:
     # Available models. These are the directories where the models can be found, and also serve as an ID for the model.
     seamless_streaming_agent = "SeamlessStreaming"
+    seamless_agent = "Seamless"
 
     def __init__(self):
         self.agents = []
@@ -96,7 +100,12 @@ class SimulevalAgentDirectory:
                     model_id,
                 )
         except Exception as e:
+            from fairseq2.assets.error import AssetError
             logger.warning("Failed to build agent %s: %s" % (model_id, e))
+            if isinstance(e, AssetError):
+                logger.warning(
+                    "Please download gated assets and set `gated_model_dir` in the config"
+                )
             raise e
 
         return agent
@@ -110,20 +119,32 @@ class SimulevalAgentDirectory:
             for agent_info in agent_infos:
                 self.add_agent(agent_info)
         else:
-            s2s_m4t_expr_agent = self.build_agent_if_available(
-                SimulevalAgentDirectory.seamless_streaming_agent,
-                config_name="vad_s2st_sc_24khz_main.yaml",
-            )
+            s2s_agent = None
+            if os.environ.get("USE_EXPRESSIVE_MODEL"):
+                logger.info("Building expressive model...")
+                s2s_agent = self.build_agent_if_available(
+                    SimulevalAgentDirectory.seamless_agent,
+                    config_name="vad_s2st_sc_24khz_main.yaml",
+                )
+                has_expressive = True
+            else:
+                logger.info("Building non-expressive model...")
+                s2s_agent = self.build_agent_if_available(
+                    SimulevalAgentDirectory.seamless_streaming_agent,
+                    config_name="vad_s2st_sc_main.yaml",
+                )
+                has_expressive = False
 
-            if s2s_m4t_expr_agent:
+            if s2s_agent:
                 self.add_agent(
                     AgentWithInfo(
-                        agent=s2s_m4t_expr_agent,
+                        agent=s2s_agent,
                         name=SimulevalAgentDirectory.seamless_streaming_agent,
                         modalities=["s2t", "s2s"],
                         target_langs=M4T_P0_LANGS,
                         dynamic_params=["expressive"],
                         description="multilingual expressive model that supports S2S and S2T",
+                        has_expressive=has_expressive,
                     )
                 )
 
@@ -137,7 +158,7 @@ class SimulevalAgentDirectory:
     def get_agent(self, name):
         for agent in self.agents:
             if agent.name == name:
-                return agent.agent
+                return agent
         return None
 
     def get_agent_or_throw(self, name):

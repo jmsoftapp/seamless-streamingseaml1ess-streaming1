@@ -119,7 +119,8 @@ class OutputSegments:
 
 class SimulevalTranscoder:
     def __init__(self, agent, sample_rate, debug, buffer_limit):
-        self.agent = agent
+        self.agent = agent.agent
+        self.has_expressive = agent.has_expressive
         self.input_queue = asyncio.Queue()
         self.output_queue = asyncio.Queue()
         self.states = self.agent.build_states()
@@ -185,7 +186,7 @@ class SimulevalTranscoder:
             logger.info(*args)
 
     @classmethod
-    def build_agent(cls, model_path, config_name="vad_s2st_main.yaml"):
+    def build_agent(cls, model_path, config_name):
         logger.info(f"Building simuleval agent: {model_path}, {config_name}")
         agent = build_system_from_dir(
             Path(__file__).resolve().parent.parent / f"models/{model_path}",
@@ -208,6 +209,10 @@ class SimulevalTranscoder:
             tgt_lang=dynamic_config.get("targetLanguage"),
             config=dynamic_config,
         )
+        if dynamic_config.get("expressive") is True and self.has_expressive is False:
+            logger.warning(
+                "Passing 'expressive' but the agent does not support expressive output!"
+            )
         # # segment is array([0, 0, 0, ..., 0, 0, 0], dtype=int16)
         self.input_queue.put_nowait(segment)
 

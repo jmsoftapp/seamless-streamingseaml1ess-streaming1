@@ -113,6 +113,7 @@ export type TranslationSentences = Array<string>;
 export type DynamicConfig = {
   // targetLanguage: a 3-letter string representing the desired output language.
   targetLanguage: string;
+  expressive: boolean | null;
 };
 
 export type PartialDynamicConfig = Partial<DynamicConfig>;
