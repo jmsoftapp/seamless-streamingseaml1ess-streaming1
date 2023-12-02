@@ -120,7 +120,7 @@ class SimulevalAgentDirectory:
                 self.add_agent(agent_info)
         else:
             s2s_agent = None
-            if os.environ.get("USE_EXPRESSIVE_MODEL"):
+            if os.environ.get("USE_EXPRESSIVE_MODEL", "0") == "1":
                 logger.info("Building expressive model...")
                 s2s_agent = self.build_agent_if_available(
                     SimulevalAgentDirectory.seamless_agent,

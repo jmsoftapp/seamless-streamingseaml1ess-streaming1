@@ -71,14 +71,15 @@ RUN cd seamless_server && \
 COPY --from=frontend /app/dist ./streaming-react-app/dist
 
 WORKDIR $HOME/app/seamless_server
-RUN --mount=type=secret,id=HF_TOKEN,mode=0444,required=true \ 
-    huggingface-cli login --token $(cat /run/secrets/HF_TOKEN) && \
-    huggingface-cli download meta-private/SeamlessExpressive pretssel_melhifigan_wm-final.pt  --local-dir ./models/Seamless/ && \
-    ln -s $(readlink -f models/Seamless/pretssel_melhifigan_wm-final.pt) models/Seamless/pretssel_melhifigan_wm.pt
+RUN --mount=type=secret,id=HF_TOKEN,mode=0444,required=false \ 
+    huggingface-cli login --token $(cat /run/secrets/HF_TOKEN) || echo "HF_TOKEN error" && \
+    huggingface-cli download meta-private/SeamlessExpressive pretssel_melhifigan_wm-final.pt  --local-dir ./models/Seamless/ || echo "HF_TOKEN error" && \
+    ln -s $(readlink -f models/Seamless/pretssel_melhifigan_wm-final.pt) models/Seamless/pretssel_melhifigan_wm.pt || true;
 
 USER root
 RUN ln -s /usr/lib/x86_64-linux-gnu/libsox.so.3 /usr/lib/x86_64-linux-gnu/libsox.so
 USER user
-CMD [ "uvicorn", "app_pubsub:app", "--host", "0.0.0.0", "--port", "7860" ]
+RUN ["chmod", "+x", "./run_docker.sh"]
+CMD ./run_docker.sh
 
 
