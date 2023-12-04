@@ -757,7 +757,7 @@ export default function StreamingInterface() {
             <div className="header-container-sra">
               <div>
                 <Typography variant="body2" sx={{color: '#65676B'}}>
-                  Welcome! This space is locked to one speaker at a time, please duplicate the space <a target="_blank" rel="noopener noreferrer" href="https://huggingface.co/spaces/facebook/seamless-streaming?duplicate=true">here</a>. Unset the environment variable `LOCK_SERVER_COMPLETELY`.
+                  Welcome! This space is locked to one speaker at a time, please duplicate the space <a target="_blank" rel="noopener noreferrer" href="https://huggingface.co/spaces/facebook/seamless-streaming?duplicate=true">here</a>.
                   <br/>
                   In your duplicated space, join a room as speaker or listener (or both), and share the
                   room code to invite listeners.
