@@ -12,7 +12,7 @@ models:
 
 # Seamless Streaming demo
 ## Running on HF spaces
-You can simply duplicate the space to run it. Make sure to unset the environment variable `LOCK_SERVER_COMPLETELY`.
+You can simply duplicate the space to run it.
 
 ## Running locally
 ### Install backend seamless_server dependencies

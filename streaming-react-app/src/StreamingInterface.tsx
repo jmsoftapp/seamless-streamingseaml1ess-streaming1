@@ -757,10 +757,14 @@ export default function StreamingInterface() {
             <div className="header-container-sra">
               <div>
                 <Typography variant="body2" sx={{color: '#65676B'}}>
-                  Welcome! This space is locked to one speaker at a time, please duplicate the space <a target="_blank" rel="noopener noreferrer" href="https://huggingface.co/spaces/facebook/seamless-streaming?duplicate=true">here</a>.
+                  Welcome! This space is limited to one speaker at a time. 
+                  If using the live HF space, sharing room code to listeners on another 
+                  IP address may not work because it's running on different replicas. 
+                  Use headphones if you are both speaker and listener to prevent feedback.
                   <br/>
-                  In your duplicated space, join a room as speaker or listener (or both), and share the
-                  room code to invite listeners.
+                  If max speakers reached, please duplicate the space <a target="_blank" rel="noopener noreferrer" href="https://huggingface.co/spaces/facebook/seamless-streaming?duplicate=true">here</a>. 
+                  In your duplicated space, join a room as speaker or listener (or both), 
+                  and share the room code to invite listeners.
                   <br/>
                   Check out the seamless_communication <a target="_blank" rel="noopener noreferrer" href="https://github.com/facebookresearch/seamless_communication/tree/main">README</a> for more information.
                   <br/>
