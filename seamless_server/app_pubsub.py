@@ -124,7 +124,7 @@ class ServerLock(TypedDict):
     member_object: Member
 
 
-if os.environ.get("LOCK_SERVER_COMPLETELY", "0") == "1":
+if os.environ.get("LOCK_SERVER_COMPLETELY"):
     logger.info("LOCK_SERVER_COMPLETELY is set. Server will be locked on startup.")
 dummy_server_lock_member_object = Member(
     client_id="seamless_user", session_id="dummy", name="Seamless User"
@@ -137,7 +137,7 @@ server_lock: Optional[ServerLock] = (
         "client_id": "seamless_user",
         "member_object": dummy_server_lock_member_object,
     }
-    if os.environ.get("LOCK_SERVER_COMPLETELY", "0") == "1"
+    if os.environ.get("LOCK_SERVER_COMPLETELY")
     else None
 )
 
@@ -517,7 +517,7 @@ async def join_room(sid, client_id, room_id_from_client, config_dict):
             and config_dict.get("lockServerName")
             == ESCAPE_HATCH_SERVER_LOCK_RELEASE_NAME
             # If we are locking the server completely we don't want someone to be able to unlock it
-            and not os.environ.get("LOCK_SERVER_COMPLETELY", "0") == "1"
+            and not os.environ.get("LOCK_SERVER_COMPLETELY")
         ):
             server_lock = None
             logger.info(
