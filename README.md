@@ -6,6 +6,8 @@ colorTo: yellow
 sdk: docker
 pinned: false
 suggested_hardware: t4-small
+models:
+ - facebook/seamless-streaming
 ---
 
 # Seamless Streaming demo
