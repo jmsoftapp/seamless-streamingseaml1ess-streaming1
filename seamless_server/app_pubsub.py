@@ -123,9 +123,12 @@ class ServerLock(TypedDict):
     client_id: str
     member_object: Member
 
+MAX_SPEAKERS = os.environ.get("MAX_SPEAKERS")
 
 if os.environ.get("LOCK_SERVER_COMPLETELY"):
     logger.info("LOCK_SERVER_COMPLETELY is set. Server will be locked on startup.")
+if MAX_SPEAKERS is not None:
+    logger.info(f"MAX_SPEAKERS is set to: {MAX_SPEAKERS}")
 dummy_server_lock_member_object = Member(
     client_id="seamless_user", session_id="dummy", name="Seamless User"
 )
@@ -556,6 +559,12 @@ async def join_room(sid, client_id, room_id_from_client, config_dict):
 
     return {"roomsJoined": sio.rooms(sid), "roomID": room_id}
 
+def allow_speaker(room, client_id):
+    if MAX_SPEAKERS is not None and client_id in room.speakers:
+        room_statuses = {room_id: room.get_room_status_dict() for room_id, room in rooms.items()}
+        speakers = sum(room_status["activeTranscoders"] for room_status in room_statuses.values())
+        return speakers < int(MAX_SPEAKERS)
+    return True
 
 # TODO: Add code to prevent more than one speaker from connecting/streaming at a time
 @sio.event
@@ -575,6 +584,12 @@ async def configure_stream(sid, config):
             f"Received stream config from {member}, but member or room is None. This should not happen."
         )
         return {"status": "error", "message": "member_or_room_is_none"}
+
+    if not allow_speaker(room, client_id):
+        logger.error(
+            f"In MAX_SPEAKERS mode we only allow one speaker at a time. Ignoring request to configure stream from client {client_id}."
+        )
+        return {"status": "error", "message": "max_speakers"}
 
     # If there is a server lock WITH an active transcoder session, prevent other users from configuring and starting a stream
     # If the server lock client does NOT have an active transcoder session allow this to proceed, knowing that
