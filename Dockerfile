@@ -45,6 +45,8 @@ RUN apt-get update && \
     # gradio dependencies \
     ffmpeg \
     # fairseq2 dependencies \
+    libjpeg8-dev \
+    libpng-dev \
     libsndfile-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
