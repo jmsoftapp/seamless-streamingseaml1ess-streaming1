@@ -51,6 +51,15 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+USER root
+RUN ln -s /usr/lib/x86_64-linux-gnu/libsox.so.3 /usr/lib/x86_64-linux-gnu/libsox.so
+# install older versions libjpeg62-turbo and libpng15
+RUN wget http://ftp.us.debian.org/debian/pool/main/libj/libjpeg-turbo/libjpeg62-turbo_2.1.5-2_amd64.deb && \
+    dpkg -i libjpeg62-turbo_2.1.5-2_amd64.deb && \
+    rm libjpeg62-turbo_2.1.5-2_amd64.deb
+RUN wget https://master.dl.sourceforge.net/project/libpng/libpng15/1.5.30/libpng-1.5.30.tar.gz && \
+    tar -xvf libpng-1.5.30.tar.gz && cd libpng-1.5.30 && ./configure && make && make install && cd .. && rm -rf libpng-1.5.30.tar.gz libpng-1.5.30
+    
 RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
@@ -78,10 +87,7 @@ RUN --mount=type=secret,id=HF_TOKEN,mode=0444,required=false \
     huggingface-cli download meta-private/SeamlessExpressive pretssel_melhifigan_wm-final.pt  --local-dir ./models/Seamless/ || echo "HF_TOKEN error" && \
     ln -s $(readlink -f models/Seamless/pretssel_melhifigan_wm-final.pt) models/Seamless/pretssel_melhifigan_wm.pt || true;
 
-USER root
-RUN ln -s /usr/lib/x86_64-linux-gnu/libsox.so.3 /usr/lib/x86_64-linux-gnu/libsox.so
 USER user
 RUN ["chmod", "+x", "./run_docker.sh"]
 CMD ./run_docker.sh
-
 
