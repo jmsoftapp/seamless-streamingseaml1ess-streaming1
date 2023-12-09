@@ -31,7 +31,7 @@ cd seamless_server
 conda create --yes --name smlss_server python=3.8 libsndfile==1.0.31
 conda activate smlss_server
 conda install --yes pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
-pip install fairseq2 --pre --extra-index-url https://fair.pkg.atmeta.com/fairseq2/whl/nightly/pt2.1.1/cu118
+pip install fairseq2==0.2.0.dev20231123+cu118 --pre --extra-index-url https://fair.pkg.atmeta.com/fairseq2/whl/nightly/pt2.1.1/cu118
 pip install -r requirements.txt
 ```
 
